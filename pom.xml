@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.sirdarey</groupId>
 	<artifactId>factpulse</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>v1</version>
 	<name>factpulse</name>
 	<description>An AI Agent for delivering facts </description>
 	<url/>
@@ -43,7 +43,6 @@
 			<groupId>org.springframework.ai</groupId>
 			<artifactId>spring-ai-starter-model-openai</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
