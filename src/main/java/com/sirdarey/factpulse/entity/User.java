@@ -16,7 +16,6 @@ import java.util.UUID;
 @Table(
         name = "users",
         uniqueConstraints = {
-                @UniqueConstraint(name = "UK_users_email", columnNames = "email"),
                 @UniqueConstraint(name = "UK_users_phone_no", columnNames = "phone_no")
         }
 )
@@ -54,8 +53,9 @@ public class User {
     private List<UserPreference> preferences;
 
 
-    public User(String phoneNo, String timezone) {
+    public User(String phoneNo, @Nullable String name, String timezone) {
         this.phoneNo = phoneNo;
+        this.name = name;
         this.timezone = timezone;
         this.createdAt = ZonedDateTime.now();
     }
