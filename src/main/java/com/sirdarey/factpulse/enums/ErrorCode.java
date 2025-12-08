@@ -1,4 +1,4 @@
-package com.sirdarey.factpulse;
+package com.sirdarey.factpulse.enums;
 
 public enum ErrorCode {
 
