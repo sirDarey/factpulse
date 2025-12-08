@@ -32,7 +32,7 @@ public class WhatsappService {
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
-    private final OpenAIService openAIService;
+    private final AIOrchestrationService aiOrchestrationService;
 
 
 
@@ -68,8 +68,8 @@ public class WhatsappService {
             }
 
             // ✅ Step 2: Process message using AI orchestration logic
-//                String aiResponse = openAIService.analyze(text);
-            String aiResponse = String.valueOf(openAIService.extractUserNameOrAsk(text));
+            String aiResponse = aiOrchestrationService.analyze(from, text);
+            log.info("processMessage[{}] :: {}", from, aiResponse);
 
             // ✅ Step 3: Send response back to user
 //                sendWhatsAppReply(from, aiResponse);
@@ -78,6 +78,7 @@ public class WhatsappService {
             log.error("❌ processMessage Exception :: {}", e.getMessage());
         }
     }
+
 
     private void sendWhatsAppReply(String recipient, String messageText) {
         try {
