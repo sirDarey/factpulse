@@ -1,10 +1,11 @@
 package com.sirdarey.factpulse.service;
 
-import com.sirdarey.factpulse.ErrorCode;
 import com.sirdarey.factpulse.config.AppConfig;
 import com.sirdarey.factpulse.entity.User;
+import com.sirdarey.factpulse.enums.ErrorCode;
 import com.sirdarey.factpulse.exception.CustomException;
 import com.sirdarey.factpulse.model.WelcomeMessageModel;
+import com.sirdarey.factpulse.repo.UserRepo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AIOrchestrationService {
 
+    private final UserRepo userRepo;
     private final UserService userService;
     private final OpenAIService openAIService;
 
@@ -22,6 +24,18 @@ public class AIOrchestrationService {
         log.info("analyze[{}] :: Analyzing user prompt...", fromPhoneNo);
         try {
             User user = userService.getUserByPhoneNo(fromPhoneNo);
+
+            if (user.getName() == null || user.getName().isBlank()) {
+                log.info("analyze[{}] :: updating user's name...", fromPhoneNo);
+
+                WelcomeMessageModel model = openAIService.welcomeUser(userInput);
+                user.setName(model.getName());
+                userRepo.save(user);
+                log.info("analyze[{}] :: updated user's name :: {}", fromPhoneNo, model.getName());
+
+                return model.getWelcomeMessage();
+            }
+
             return openAIService.analyzePrompt(userInput);
 
         } catch (CustomException ex) {

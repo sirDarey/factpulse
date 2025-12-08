@@ -1,6 +1,6 @@
 package com.sirdarey.factpulse.exception;
 
-import com.sirdarey.factpulse.ErrorCode;
+import com.sirdarey.factpulse.enums.ErrorCode;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
