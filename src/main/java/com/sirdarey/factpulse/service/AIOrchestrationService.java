@@ -19,8 +19,8 @@ public class AIOrchestrationService {
 
 
     public String analyze(String fromPhoneNo, String userInput) {
+        log.info("analyze[{}] :: Analyzing user prompt...", fromPhoneNo);
         try {
-
             User user = userService.getUserByPhoneNo(fromPhoneNo);
             return openAIService.analyzePrompt(userInput);
 
@@ -35,12 +35,15 @@ public class AIOrchestrationService {
 
 
     private String processPossibleFirstUser(CustomException ex, String userInput, String phoneNo) {
+        log.info("processPossibleFirstUser for :: {}", phoneNo);
         if (!ex.getErrorCode().equals(ErrorCode.USER_NOT_FOUND)) {
             return ex.getMessage();
         }
 
         try {
             WelcomeMessageModel model = openAIService.welcomeUser(userInput);
+            log.info("processPossibleFirstUser[{}] saving new user...", phoneNo);
+
             userService.saveUser(phoneNo, model.getName());
 
             return model.getWelcomeMessage();
