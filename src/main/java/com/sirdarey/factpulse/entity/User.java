@@ -43,12 +43,11 @@ public class User {
     @Nullable
     private ZonedDateTime updatedAt;
 
-    @OneToMany(fetch = FetchType.LAZY)
+    @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(
             name = "user_id",
             referencedColumnName = "id",
-            foreignKey = @ForeignKey(name = "FK_user_preference_id"),
-            nullable = false
+            foreignKey = @ForeignKey(name = "FK_user_preference_id")
     )
     private List<UserPreference> preferences;
 
