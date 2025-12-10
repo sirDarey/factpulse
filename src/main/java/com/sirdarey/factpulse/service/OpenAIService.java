@@ -3,6 +3,7 @@ package com.sirdarey.factpulse.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sirdarey.factpulse.config.AppConfig;
+import com.sirdarey.factpulse.model.AIResponseModel;
 import com.sirdarey.factpulse.model.WelcomeMessageModel;
 import com.sirdarey.factpulse.util.PromptUtil;
 import lombok.RequiredArgsConstructor;
@@ -32,8 +33,8 @@ public class OpenAIService {
      * Takes in a natural-language prompt, sends it to the AI model,
      * and returns the model's response as plain text.
      */
-    public String analyzePrompt(String prompt) {
-        log.info("AI-analyze :: prompt :: {}", prompt);
+    public AIResponseModel analyzePrompt(String prompt) throws JsonProcessingException {
+        log.info("AI-analyzePrompt :: prompt :: {}", prompt);
         Prompt aiPrompt = new Prompt(prompt);
 
         ChatResponse chatResponse = chatModel.call(aiPrompt);
@@ -48,8 +49,14 @@ public class OpenAIService {
             response = chatResponse.getResult().getOutput().getText();
         }
 
-        log.info("AI-analyze :: response :: {}", response);
-        return response;
+        log.info("AI-analyzePrompt :: response :: {}", response);
+
+        try {
+            return objectMapper.readValue(response, AIResponseModel.class);
+        } catch (Exception ex) {
+            log.error("analyzePrompt-Exception :: {}", ex.getMessage());
+            throw ex;
+        }
     }
 
 
@@ -58,7 +65,7 @@ public class OpenAIService {
      * Always returns a JSON response containing both the welcomeMessage and the sanitized name
      */
     public WelcomeMessageModel welcomeUser(String userMessage) throws JsonProcessingException {
-        log.info("extractUserNameOrAsk for :: {}", userMessage);
+        log.info("AI-welcomeUser for :: {}", userMessage);
 
         UserMessage message = new UserMessage(PromptUtil.WELCOME_USER_PROMPT + "\n\nUser message: " + userMessage);
         Prompt aiPrompt = new Prompt(message);
@@ -73,12 +80,12 @@ public class OpenAIService {
         try {
               model = objectMapper.readValue(rawResponse, WelcomeMessageModel.class);
         } catch (Exception ex) {
-            log.error("extractUserNameOrAsk-Exception :: {}", ex.getMessage());
+            log.error("AI-welcomeUser-Exception :: {}", ex.getMessage());
             throw ex;
         }
 
         model.setName(sanitizeName(model.getName()));
-        log.info("extractUserNameOrAsk for :: {} :: RESPONSE :: {}", userMessage, model);
+        log.info("AI-welcomeUser for :: {} :: RESPONSE :: {}", userMessage, model);
 
         return model;
     }

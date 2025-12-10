@@ -6,5 +6,7 @@ public enum UserIntent{
 
     NEW_PREFERENCE,
 
-    UPDATE_PREFERENCE
+    UPDATE_PREFERENCE,
+
+    NONE
 }
