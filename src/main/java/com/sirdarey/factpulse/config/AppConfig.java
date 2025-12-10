@@ -5,10 +5,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.web.client.RestTemplate;
 
 @Slf4j
 @Configuration
+@EnableScheduling
 @RequiredArgsConstructor
 public class AppConfig {
 
@@ -24,5 +28,15 @@ public class AppConfig {
     @Bean
     public ObjectMapper objectMapper() {
         return new ObjectMapper();
+    }
+
+    @Bean
+    public TaskScheduler taskScheduler() {
+        ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+        // Set pool size > 1 so multiple users can have tasks run at the exact same second
+        scheduler.setPoolSize(10);
+        scheduler.setThreadNamePrefix("fact-scheduler-");
+        scheduler.initialize();
+        return scheduler;
     }
 }

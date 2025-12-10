@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -27,6 +28,7 @@ public class AIOrchestrationService {
     private final UserRepo userRepo;
     private final UserService userService;
     private final OpenAIService openAIService;
+    private final SchedulerService schedulerService;
     private final UserPreferenceRepo userPreferenceRepo;
 
 
@@ -62,9 +64,7 @@ public class AIOrchestrationService {
 
 
     private String getPrompt(User user, String userInput) {
-        List<UserPreference> userPreferences = user.getPreferences();
-        List<String> topics = userPreferences.stream().map(UserPreference::getTopic).toList();
-
+        List<String> topics = userPreferenceRepo.getTopicsByUserId(user.getId());
         return String.format(PromptUtil.ANALYSIS_PROMPT, userInput, PromptUtil.SYSTEM_PROMPT, topics, user.getId());
     }
 
@@ -77,32 +77,33 @@ public class AIOrchestrationService {
         } else if (UserIntent.NEW_PREFERENCE.name().equals(aiResponse.userIntent())) {
             addPreferenceToUser(user, aiResponse);
         } else if (UserIntent.UPDATE_PREFERENCE.name().equals(aiResponse.userIntent())) {
-            updateUserPreference(user, aiResponse);
+            updateUserPreference(aiResponse, user.getId());
         }
-
-        userRepo.save(user);
     }
 
-    private void updateUserPreference(User user, AIResponseModel aiResponse) {
+    private void updateUserPreference(AIResponseModel aiResponse, UUID userID) {
         assert aiResponse.data() != null;
         if(aiResponse.data().get("topic") == null) return;
 
-        List<UserPreference> userPreferences = user.getPreferences();
-        UserPreference preference = userPreferences
-                .stream()
-                .filter(p-> p.getTopic().equals(aiResponse.data().get("topic")))
-                .findFirst()
-                .orElse(null);
+//        List<UserPreference> userPreferences = user.getPreferences();
+        UserPreference preference = userPreferenceRepo.findByTopicAndUserID(aiResponse.data().get("topic"), userID);
 
         if(preference != null) {
             if(aiResponse.data().get("freqInSeconds") != null) {
-                preference.setFreqInSeconds(Integer.parseInt(aiResponse.data().get("freqInSeconds")));
+                Integer newFreqInSeconds = Integer.parseInt(aiResponse.data().get("freqInSeconds"));
+                updateScheduling(newFreqInSeconds, preference);
+                preference.setFreqInSeconds(newFreqInSeconds);
             }
             if(aiResponse.data().get("tone") != null) {
                 preference.setTone(aiResponse.data().get("tone"));
             }
             if(aiResponse.data().get("active") != null) {
-                preference.setActive(Boolean.parseBoolean(aiResponse.data().get("active")));
+                boolean isActive = Boolean.parseBoolean(aiResponse.data().get("active"));
+                preference.setActive(isActive);
+
+                if (!isActive) {
+                    preference.setNextRun(null);
+                }
             }
             preference.setUpdatedAt(ZonedDateTime.now());
 
@@ -114,7 +115,6 @@ public class AIOrchestrationService {
         assert aiResponse.data() != null;
         if(aiResponse.data().get("topic") == null) return;
 
-        List<UserPreference> userPreferences = user.getPreferences();
         Integer newFreqInSeconds = null;
         if(aiResponse.data().get("freqInSeconds") != null) {
             newFreqInSeconds = Integer.parseInt(aiResponse.data().get("freqInSeconds"));
@@ -123,19 +123,20 @@ public class AIOrchestrationService {
         UserPreference preference = userPreferenceRepo.save(new UserPreference(
                 aiResponse.data().get("topic").toLowerCase(),
                 newFreqInSeconds,
-                aiResponse.data().get("tone")
+                aiResponse.data().get("tone"),
+                user,
+                (newFreqInSeconds==null)? null : ZonedDateTime.now().plusSeconds(newFreqInSeconds)
         ));
-        userPreferences.add(preference);
 
         if(newFreqInSeconds != null) {
-            //TODO :: call scheduler for fresh schedule
+            schedulerService.scheduleTask(preference);
         }
     }
 
     private void updateScheduling(@Nullable Integer newFreqInSeconds, UserPreference preference){
         if(newFreqInSeconds == null) return;
         if(preference.getFreqInSeconds() != null && !preference.getFreqInSeconds().equals(newFreqInSeconds)){
-            //TODO :: Call scheduler service to make updates
+            schedulerService.updateSchedule(preference);
         }
         preference.setFreqInSeconds(newFreqInSeconds);
     }
@@ -145,6 +146,8 @@ public class AIOrchestrationService {
         if(aiResponse.data().get("name") != null){
             user.setName(aiResponse.data().get("name"));
             user.setUpdatedAt(ZonedDateTime.now());
+
+            userRepo.save(user);
         }
     }
 

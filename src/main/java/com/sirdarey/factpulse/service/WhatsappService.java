@@ -1,6 +1,5 @@
 package com.sirdarey.factpulse.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
@@ -11,8 +10,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.client.RestTemplate;
 
 @Slf4j
@@ -32,55 +29,9 @@ public class WhatsappService {
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
-    private final AIOrchestrationService aiOrchestrationService;
 
 
-
-    @PostMapping
-    public void processMessage(@RequestBody String payload) {
-        try {
-            JsonNode json = objectMapper.readTree(payload);
-            JsonNode messagesNode = json.at("/entry/0/changes/0/value/messages");
-
-            if (!messagesNode.isArray() || messagesNode.isEmpty()) {
-                log.error("\nprocessMessage :: Invalid messagesNode :: {}", messagesNode);
-                return;
-            }
-
-            JsonNode message = messagesNode.get(0);
-            String from = message.get("from").asText();
-            String text = message.has("text") ? message.get("text").get("body").asText() : null;
-            String messageId = message.has("id") ? message.get("id").asText() : null;
-
-            log.info("💬 Message from {}: {}", from, text);
-            log.info("💬 MESSAGE: {}", message);
-
-            if (text == null) {
-                log.error("\nprocessMessage :: Invalid message! text IS NULL");
-//                    sendWhatsAppReply(from, AppConfig.APOLOGY_RESPONSE);
-                return ;
-            }
-
-            // ✅ Step 1: Mark message as read & show typing bubble
-            if (messageId != null) {
-//                    markAsRead(messageId);
-//                    sendTypingIndicator(from);
-            }
-
-            // ✅ Step 2: Process message using AI orchestration logic
-            String aiResponse = aiOrchestrationService.analyze(from, text);
-            log.info("processMessage[{}] :: {}", from, aiResponse);
-
-            // ✅ Step 3: Send response back to user
-//                sendWhatsAppReply(from, aiResponse);
-
-        } catch (Exception e) {
-            log.error("❌ processMessage Exception :: {}", e.getMessage());
-        }
-    }
-
-
-    private void sendWhatsAppReply(String recipient, String messageText) {
+    public void sendWhatsAppReply(String recipient, String messageText) {
         try {
             String url = GRAPH_API_URL + "/" + PHONE_NUMBER_ID + "/messages";
 
@@ -97,6 +48,8 @@ public class WhatsappService {
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.setBearerAuth(ACCESS_TOKEN);
 
+            // sendTypingIndicator(from);
+
             HttpEntity<String> entity = new HttpEntity<>(bodyNode.toString(), headers);
             ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
 
@@ -106,8 +59,9 @@ public class WhatsappService {
         }
     }
 
+
     // ✅ Step 1: Mark incoming message as read
-    private void markAsRead(String messageId) {
+    public void markAsRead(String messageId) {
         try {
             String url = GRAPH_API_URL + "/" + PHONE_NUMBER_ID + "/messages";
             String body = """
@@ -128,6 +82,7 @@ public class WhatsappService {
             log.error("⚠️ Error marking message as read: {}", e.getMessage(), e);
         }
     }
+
 
     // ✅ Step 2: Official Typing Indicator API Call (from Meta docs)
     // ✅ Updated: sendTypingIndicator() - fallback if sandbox rejects typing indicator

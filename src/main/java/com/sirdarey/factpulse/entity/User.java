@@ -9,7 +9,6 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.ZonedDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -42,14 +41,6 @@ public class User {
 
     @Nullable
     private ZonedDateTime updatedAt;
-
-    @OneToMany(fetch = FetchType.EAGER)
-    @JoinColumn(
-            name = "user_id",
-            referencedColumnName = "id",
-            foreignKey = @ForeignKey(name = "FK_user_preference_id")
-    )
-    private List<UserPreference> preferences;
 
 
     public User(String phoneNo, @Nullable String name, String timezone) {

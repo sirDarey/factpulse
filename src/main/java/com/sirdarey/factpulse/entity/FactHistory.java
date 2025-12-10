@@ -23,9 +23,19 @@ public class FactHistory {
     @Column(nullable = false)
     private ZonedDateTime deliveredAt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "user_preference_id",
+            referencedColumnName = "id",
+            foreignKey = @ForeignKey(name = "FK_user_preference_id"),
+            nullable = false
+    )
+    private UserPreference userPreference;
 
-    public FactHistory(String content) {
+
+    public FactHistory(String content, UserPreference userPreference) {
         this.content = content;
         this.deliveredAt = ZonedDateTime.now();
+        this.userPreference = userPreference;
     }
 }
