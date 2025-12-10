@@ -14,7 +14,6 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.stereotype.Service;
 
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -34,23 +33,7 @@ public class OpenAIService {
      * and returns the model's response as plain text.
      */
     public AIResponseModel analyzePrompt(String prompt) throws JsonProcessingException {
-        log.info("AI-analyzePrompt :: prompt :: {}", prompt);
-        Prompt aiPrompt = new Prompt(prompt);
-
-        ChatResponse chatResponse = chatModel.call(aiPrompt);
-        String response;
-
-        if (chatResponse == null
-                || chatResponse.getResult() == null
-                || chatResponse.getResult().getOutput() == null) {
-
-            response = AppConfig.APOLOGY_RESPONSE;
-        } else {
-            response = chatResponse.getResult().getOutput().getText();
-        }
-
-        log.info("AI-analyzePrompt :: response :: {}", response);
-
+        String response = analyzePromptToSimpleText(prompt);
         try {
             return objectMapper.readValue(response, AIResponseModel.class);
         } catch (Exception ex) {
@@ -110,5 +93,26 @@ public class OpenAIService {
         }
 
         return name;
+    }
+
+
+    public String analyzePromptToSimpleText(String prompt) {
+        log.info("AI-analyzePrompt :: prompt :: {}", prompt);
+        Prompt aiPrompt = new Prompt(prompt);
+
+        ChatResponse chatResponse = chatModel.call(aiPrompt);
+        String response;
+
+        if (chatResponse == null
+                || chatResponse.getResult() == null
+                || chatResponse.getResult().getOutput() == null) {
+
+            response = AppConfig.APOLOGY_RESPONSE;
+        } else {
+            response = chatResponse.getResult().getOutput().getText();
+        }
+
+        log.info("AI-analyzePrompt :: response :: {}", response);
+        return response;
     }
 }

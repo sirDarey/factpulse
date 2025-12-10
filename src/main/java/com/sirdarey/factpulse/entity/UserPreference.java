@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.ZonedDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -43,23 +42,25 @@ public class UserPreference {
     @Nullable
     private String schedulerId;
 
-    @OneToMany(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
-            name = "fact_history_id",
+            name = "user_id",
             referencedColumnName = "id",
-            foreignKey = @ForeignKey(name = "FK_fact_history_id"),
+            foreignKey = @ForeignKey(name = "FK_user_id"),
             nullable = false
     )
-    private List<FactHistory> history;
+    private User user;
 
 
     //For a new preference
-    public UserPreference(String topic, @Nullable Integer freqInSeconds, @Nullable String tone) {
+    public UserPreference(String topic, @Nullable Integer freqInSeconds, @Nullable String tone, User user, @Nullable ZonedDateTime nextRun) {
         this.topic = topic;
         this.active = true;
         this.createdAt = ZonedDateTime.now();
         this.freqInSeconds = freqInSeconds;
         this.tone = tone;
+        this.user = user;
+        this.nextRun = nextRun;
 
         if(freqInSeconds != null) {
             this.schedulerId = UUID.randomUUID().toString();
