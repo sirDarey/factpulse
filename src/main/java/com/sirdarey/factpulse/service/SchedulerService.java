@@ -5,6 +5,7 @@ import com.sirdarey.factpulse.entity.User;
 import com.sirdarey.factpulse.entity.UserPreference;
 import com.sirdarey.factpulse.repo.FactHistoryRepo;
 import com.sirdarey.factpulse.repo.UserPreferenceRepo;
+import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -93,10 +94,11 @@ public class SchedulerService {
     /**
      * Updates an existing schedule (Cancels old -> Starts new)
      */
-    public void updateSchedule(UserPreference preference) {
+    public void updateSchedule(UserPreference preference, @Nullable Integer prevFreqInSeconds) {
         try {
             stopSchedule(preference.getSchedulerId());
-            if(preference.isActive()) {
+            if(preference.isActive() && preference.getFreqInSeconds() != null
+                    && !preference.getFreqInSeconds().equals(prevFreqInSeconds)) {
                 scheduleTask(preference);
             }
         } catch (Exception e) {
@@ -141,7 +143,6 @@ public class SchedulerService {
             1. Generate a NEW, UNIQUE fact that is NOT in or common to any of the history list above.
             2. If you have exhausted all interesting facts about this topic and cannot generate a new one, respond with exactly: 'NO_MORE_FACTS'
             3. Do not add introductions like "Here is a fact". Just the fact.
-            4. You can start by saying: "Here's a new fact about #topic: ...."
             """,
                     preference.getTopic(),
                     (preference.getTone()==null)? "friendly" : preference.getTone(),
