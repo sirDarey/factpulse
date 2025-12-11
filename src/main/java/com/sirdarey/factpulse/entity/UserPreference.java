@@ -42,7 +42,7 @@ public class UserPreference {
     @Nullable
     private String schedulerId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(
             name = "user_id",
             referencedColumnName = "id",

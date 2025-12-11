@@ -11,7 +11,6 @@ import com.sirdarey.factpulse.model.WelcomeMessageModel;
 import com.sirdarey.factpulse.repo.UserPreferenceRepo;
 import com.sirdarey.factpulse.repo.UserRepo;
 import com.sirdarey.factpulse.util.PromptUtil;
-import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -89,9 +88,10 @@ public class AIOrchestrationService {
         UserPreference preference = userPreferenceRepo.findByTopicAndUserID(aiResponse.data().get("topic"), userID);
 
         if(preference != null) {
+            Integer prevFreqInSeconds = preference.getFreqInSeconds();
+
             if(aiResponse.data().get("freqInSeconds") != null) {
                 Integer newFreqInSeconds = Integer.parseInt(aiResponse.data().get("freqInSeconds"));
-                updateScheduling(newFreqInSeconds, preference);
                 preference.setFreqInSeconds(newFreqInSeconds);
             }
             if(aiResponse.data().get("tone") != null) {
@@ -106,6 +106,8 @@ public class AIOrchestrationService {
                 }
             }
             preference.setUpdatedAt(ZonedDateTime.now());
+            schedulerService.updateSchedule(preference, prevFreqInSeconds);
+
 
             userPreferenceRepo.save(preference);
         }
@@ -133,13 +135,6 @@ public class AIOrchestrationService {
         }
     }
 
-    private void updateScheduling(@Nullable Integer newFreqInSeconds, UserPreference preference){
-        if(newFreqInSeconds == null) return;
-        if(preference.getFreqInSeconds() != null && !preference.getFreqInSeconds().equals(newFreqInSeconds)){
-            schedulerService.updateSchedule(preference);
-        }
-        preference.setFreqInSeconds(newFreqInSeconds);
-    }
 
     private void updateName(User user, AIResponseModel aiResponse) {
         assert aiResponse.data() != null;
